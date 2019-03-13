@@ -3,6 +3,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'  #filters out tensorflow INFO logs, but
 import keras
 import matplotlib.pylab as plt
 import time
+import tensorflow as tf
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Activation, Dropout, Flatten, Dense, AveragePooling2D
@@ -11,10 +12,10 @@ from keras.callbacks import Callback, ModelCheckpoint
 
 #Training parameters
 #nb_epoch = 128
-nb_epoch = 32
-nb_train_samples = 64
-nb_test_samples = 16
-batch_size=8 #This is how many images are processed at once (before weights are adjusted).  Make this number smaller if you run out of GPU memory.
+nb_epoch = 1
+nb_train_samples = 400
+nb_test_samples = 200
+batch_size=6  #This is how many images are processed at once (before weights are adjusted).  Make this number smaller if you run out of GPU memory.
 
 # dimensions of our images.
 img_width, img_height = 336, 224
@@ -27,10 +28,11 @@ checkpoint_filepath='trained_network_models\\checkpoints\\save_every_epoch\\'+sa
 
 #image_dir = 'E:\\MarkLambertImages\\'
 #image_dir = 'C:\\Users\\mdlambe1\\Pictures\\Earthlimb_pics_336x224'
-image_dir = 'C:\\Users\\Aaron\\Desktop\\GEO_ML\\island'
+#image_dir = 'C:\\Users\\Aaron\\Desktop\\GEO_ML\\island'
+image_dir = '//home//aaron//testdir//your_feature'
 
-train_data_dir = image_dir+'\\train'
-test_data_dir = image_dir+'\\test'
+train_data_dir = image_dir + '//train'
+test_data_dir = image_dir + '//test'
 
 start_time=time.time()
 
@@ -44,8 +46,7 @@ class AccuracyHistory(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
         self.acc.append(logs.get('acc'))
         self.loss.append(logs.get('loss'))
-        self.val_acc.append(log
-                            s.get('val_acc'))
+        self.val_acc.append(logs.get('val_acc'))
         self.val_loss.append(logs.get('val_loss'))
 		
 history = AccuracyHistory()
@@ -73,58 +74,61 @@ test_generator = datagen.flow_from_directory(
         class_mode='binary')
 
 # Architecture of NN
-model = Sequential()
-model.add(Conv2D(32,(3, 3), input_shape=(img_height, img_width, 3),padding='same',kernel_initializer='lecun_normal'))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
+for d in ['/device:GPU:1', '/device:GPU:2', '/device:GPU:3']:
+	with tf.device(d):
+		model = Sequential()
+		model.add(Conv2D(32,(3, 3), input_shape=(img_height, img_width, 3),padding='same',kernel_initializer='lecun_normal'))
+		model.add(Activation('relu'))
+		model.add(MaxPooling2D(pool_size=(2, 2)))
 
-model.add(Conv2D(32,(3, 3),padding='same'))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
+		model.add(Conv2D(32,(3, 3),padding='same'))
+		model.add(Activation('relu'))
+		model.add(MaxPooling2D(pool_size=(2, 2)))
 
-model.add(Conv2D(64,(3, 3),padding='same'))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
+		model.add(Conv2D(64,(3, 3),padding='same'))
+		model.add(Activation('relu'))
+		model.add(MaxPooling2D(pool_size=(2, 2)))
 
-model.add(Conv2D(64,(3, 3),padding='same'))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
+		model.add(Conv2D(64,(3, 3),padding='same'))
+		model.add(Activation('relu'))
+		model.add(MaxPooling2D(pool_size=(2, 2)))
 
-model.add(AveragePooling2D(pool_size=(2,2)))
-model.add(Flatten())
-'''model.add(Dense(1024))
-model.add(Activation('relu'))
-model.add(Dropout(0.5))
-model.add(Dense(1024))
-model.add(Activation('relu'))
-model.add(Dropout(0.5))'''
-model.add(Dense(1))
-model.add(Activation('sigmoid'))
+		model.add(AveragePooling2D(pool_size=(2,2)))
+		model.add(Flatten())
+		'''model.add(Dense(1024))
+		model.add(Activation('relu'))
+		model.add(Dropout(0.5))
+		model.add(Dense(1024))
+		model.add(Activation('relu'))
+		model.add(Dropout(0.5))'''
+		model.add(Dense(1))
+		model.add(Activation('sigmoid'))
 
-my_rmsprop = keras.optimizers.RMSprop(lr=0.0001, rho=0.9, epsilon=1e-07, decay=0.0)
-model.compile(loss='binary_crossentropy',
-              optimizer=my_rmsprop,
-              metrics=['accuracy'])
+		my_rmsprop = keras.optimizers.RMSprop(lr=0.0001, rho=0.9, epsilon=1e-07, decay=0.0)
+		model.compile(loss='binary_crossentropy',
+		              optimizer=my_rmsprop,
+		              metrics=['accuracy'])
 
-# checkpoint (to save model after every epoch).  Need to call checkpoint as a callback in model.fit_generator for this to work.
-checkpoint = ModelCheckpoint(checkpoint_filepath, verbose=1, save_best_only=False)
+		# checkpoint (to save model after every epoch).  Need to call checkpoint as a callback in model.fit_generator for this to work.
+		checkpoint = ModelCheckpoint(checkpoint_filepath, verbose=1, save_best_only=False)
 
-#save only if validation accuracy improves:
-#filepath='trained_network_models//checkpoints//save_every_epoch//'+saved_model_filename
-#checkpoint = ModelCheckpoint(checkpoint_filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
+		#save only if validation accuracy improves:
+		#filepath='trained_network_models//checkpoints//save_every_epoch//'+saved_model_filename
+		#checkpoint = ModelCheckpoint(checkpoint_filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
 
-model.fit_generator(
-        train_generator,
-        steps_per_epoch=nb_train_samples/batch_size,
-        epochs=nb_epoch,
-        verbose=1,
-        validation_data=test_generator,
-        validation_steps=nb_test_samples/batch_size,
-		callbacks=[history, checkpoint])
-		#callbacks=[history])
-		
-#Save final model to HDF5
-model.save('trained_network_models//'+saved_model_filename)
+
+		model.fit_generator(
+		        train_generator,
+		        steps_per_epoch=nb_train_samples/batch_size,
+		        epochs=nb_epoch,
+		        verbose=1,
+		        validation_data=test_generator,
+		        validation_steps=nb_test_samples/batch_size,
+				callbacks=[history, checkpoint])
+				#callbacks=[history])
+				
+		#Save final model to HDF5
+		model.save('trained_network_models//'+saved_model_filename)
 
 # Evaluating on the testing set
 #model.evaluate_generator(test_generator, nb_test_samples)
@@ -137,7 +141,7 @@ seconds = time_in_seconds % 60
 print('total runtime: ', hours, ' hours, ', minutes, ' minutes, and ', seconds, ' seconds') 
 
 # Plot accuracy
-plt.figure(0)
+#plt.figure(0)
 plt.plot(range(0, nb_epoch), history.acc)
 plt.plot(range(0, nb_epoch), history.val_acc)
 plt.xlabel('Epochs')
