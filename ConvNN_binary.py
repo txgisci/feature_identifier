@@ -4,6 +4,7 @@ import keras
 import matplotlib.pylab as plt
 import time
 import tensorflow as tf
+from keras.utils import multi_gpu_model
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Activation, Dropout, Flatten, Dense, AveragePooling2D
@@ -12,10 +13,15 @@ from keras.callbacks import Callback, ModelCheckpoint
 
 #Training parameters
 #nb_epoch = 128
-nb_epoch = 1
-nb_train_samples = 400
-nb_test_samples = 200
-batch_size=6  #This is how many images are processed at once (before weights are adjusted).  Make this number smaller if you run out of GPU memory.
+#for d in ['/device:GPU:1']:
+#	with tf.device(d):
+nb_epoch = 128
+#nb_train_samples = 8
+#nb_test_samples = 2
+#batch_size = 2  
+nb_train_samples = 1500
+nb_test_samples = 250
+batch_size = 128  #This is how many images are processed at once (before weights are adjusted).  Make this number smaller if you run out of GPU memory.
 
 # dimensions of our images.
 img_width, img_height = 336, 224
@@ -24,12 +30,12 @@ img_width, img_height = 336, 224
 saved_model_filename_no_ext='model-Limb-'+str(img_width)+'x'+str(img_height)+'-shape=32-32-64-64--'+str(nb_train_samples)+'-samples-'+str(nb_epoch)+'-epochs'
 saved_model_filename=saved_model_filename_no_ext+'.h5'
 #filepath if saving at checkpoints is enabled:
-checkpoint_filepath='trained_network_models\\checkpoints\\save_every_epoch\\'+saved_model_filename_no_ext+'-epoch={epoch:03d}-val_acc={val_acc:.3f}-loss={loss:.3f}-val_loss={val_loss:.3f}.h5'
+checkpoint_filepath='trained_network_models//checkpoints//save_every_epoch//'+saved_model_filename_no_ext+'-epoch={epoch:03d}-val_acc={val_acc:.3f}-loss={loss:.3f}-val_loss={val_loss:.3f}.h5'
 
 #image_dir = 'E:\\MarkLambertImages\\'
 #image_dir = 'C:\\Users\\mdlambe1\\Pictures\\Earthlimb_pics_336x224'
 #image_dir = 'C:\\Users\\Aaron\\Desktop\\GEO_ML\\island'
-image_dir = '//home//aaron//testdir//your_feature'
+image_dir = '//home//aaron//projectDir//island_images'
 
 train_data_dir = image_dir + '//train'
 test_data_dir = image_dir + '//test'
@@ -74,61 +80,66 @@ test_generator = datagen.flow_from_directory(
         class_mode='binary')
 
 # Architecture of NN
-for d in ['/device:GPU:1', '/device:GPU:2', '/device:GPU:3']:
-	with tf.device(d):
-		model = Sequential()
-		model.add(Conv2D(32,(3, 3), input_shape=(img_height, img_width, 3),padding='same',kernel_initializer='lecun_normal'))
-		model.add(Activation('relu'))
-		model.add(MaxPooling2D(pool_size=(2, 2)))
+#for d in ['/device:GPU:1']:
+with tf.device("/cpu:0"):
+	model = Sequential()
+	model.add(Conv2D(32,(3, 3), input_shape=(img_height, img_width, 3),padding='same',kernel_initializer='lecun_normal'))
+	model.add(Activation('relu'))
+	model.add(MaxPooling2D(pool_size=(2, 2)))
 
-		model.add(Conv2D(32,(3, 3),padding='same'))
-		model.add(Activation('relu'))
-		model.add(MaxPooling2D(pool_size=(2, 2)))
+	model.add(Conv2D(32,(3, 3),padding='same'))
+	model.add(Activation('relu'))
+	model.add(MaxPooling2D(pool_size=(2, 2)))
 
-		model.add(Conv2D(64,(3, 3),padding='same'))
-		model.add(Activation('relu'))
-		model.add(MaxPooling2D(pool_size=(2, 2)))
+	model.add(Conv2D(64,(3, 3),padding='same'))
+	model.add(Activation('relu'))
+	model.add(MaxPooling2D(pool_size=(2, 2)))
 
-		model.add(Conv2D(64,(3, 3),padding='same'))
-		model.add(Activation('relu'))
-		model.add(MaxPooling2D(pool_size=(2, 2)))
+	model.add(Conv2D(64,(3, 3),padding='same'))
+	model.add(Activation('relu'))
+	model.add(MaxPooling2D(pool_size=(2, 2)))
 
-		model.add(AveragePooling2D(pool_size=(2,2)))
-		model.add(Flatten())
-		'''model.add(Dense(1024))
-		model.add(Activation('relu'))
-		model.add(Dropout(0.5))
-		model.add(Dense(1024))
-		model.add(Activation('relu'))
-		model.add(Dropout(0.5))'''
-		model.add(Dense(1))
-		model.add(Activation('sigmoid'))
+	model.add(AveragePooling2D(pool_size=(2,2)))
+	model.add(Flatten())
+	'''model.add(Dense(1024))
+	model.add(Activation('relu'))
+	model.add(Dropout(0.5))
+	model.add(Dense(1024))
+	model.add(Activation('relu'))
+	model.add(Dropout(0.5))'''
+	model.add(Dense(1))
+	model.add(Activation('sigmoid'))
 
-		my_rmsprop = keras.optimizers.RMSprop(lr=0.0001, rho=0.9, epsilon=1e-07, decay=0.0)
-		model.compile(loss='binary_crossentropy',
-		              optimizer=my_rmsprop,
-		              metrics=['accuracy'])
+#making model parallel for gpu
+model = multi_gpu_model(model, gpus=4)
 
-		# checkpoint (to save model after every epoch).  Need to call checkpoint as a callback in model.fit_generator for this to work.
-		checkpoint = ModelCheckpoint(checkpoint_filepath, verbose=1, save_best_only=False)
+my_rmsprop = keras.optimizers.RMSprop(lr=0.0001, rho=0.9, epsilon=1e-07, decay=0.0)
+model.compile(loss='binary_crossentropy',
+              optimizer=my_rmsprop,
+              metrics=['accuracy'])
 
-		#save only if validation accuracy improves:
-		#filepath='trained_network_models//checkpoints//save_every_epoch//'+saved_model_filename
-		#checkpoint = ModelCheckpoint(checkpoint_filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
+# checkpoint (to save model after every epoch).  Need to call checkpoint as a callback in model.fit_generator for this to work.
+checkpoint = ModelCheckpoint(checkpoint_filepath, verbose=1, save_best_only=False)
+
+#save only if validation accuracy improves:
+#filepath='trained_network_models//checkpoints//save_every_epoch//'+saved_model_filename
+#checkpoint = ModelCheckpoint(checkpoint_filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
+
+model.fit_generator(
+        train_generator,
+        steps_per_epoch=nb_train_samples/batch_size,
+        epochs=nb_epoch,
+        verbose=1,
+        validation_data=test_generator,
+        validation_steps=nb_test_samples/batch_size,
+		callbacks=[history, checkpoint])
+		#callbacks=[history])
+		
+#Save final model to HDF5
 
 
-		model.fit_generator(
-		        train_generator,
-		        steps_per_epoch=nb_train_samples/batch_size,
-		        epochs=nb_epoch,
-		        verbose=1,
-		        validation_data=test_generator,
-		        validation_steps=nb_test_samples/batch_size,
-				callbacks=[history, checkpoint])
-				#callbacks=[history])
-				
-		#Save final model to HDF5
-		model.save('trained_network_models//'+saved_model_filename)
+
+model.save('trained_network_models//'+saved_model_filename)
 
 # Evaluating on the testing set
 #model.evaluate_generator(test_generator, nb_test_samples)
