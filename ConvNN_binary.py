@@ -35,7 +35,7 @@ checkpoint_filepath='trained_network_models//checkpoints//save_every_epoch//'+sa
 #image_dir = 'E:\\MarkLambertImages\\'
 #image_dir = 'C:\\Users\\mdlambe1\\Pictures\\Earthlimb_pics_336x224'
 #image_dir = 'C:\\Users\\Aaron\\Desktop\\GEO_ML\\island'
-image_dir = '//home//aaron//projectDir//island_images'
+image_dir = '//home//aaron//projectDir//island_images_336x224'
 
 train_data_dir = image_dir + '//train'
 test_data_dir = image_dir + '//test'
