@@ -19,8 +19,8 @@ nb_epoch = 128
 #nb_train_samples = 8
 #nb_test_samples = 2
 #batch_size = 2  
-nb_train_samples = 1500
-nb_test_samples = 250
+nb_train_samples = 5000
+nb_test_samples = 1000
 batch_size = 128  #This is how many images are processed at once (before weights are adjusted).  Make this number smaller if you run out of GPU memory.
 
 # dimensions of our images.
