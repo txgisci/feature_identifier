@@ -1,6 +1,4 @@
-:toc: macro
-:toc-title:
-:toclevels: 99
+
 
 # Feature Identifier 
 
