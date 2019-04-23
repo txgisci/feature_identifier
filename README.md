@@ -6,7 +6,7 @@ https://eol.jsc.nasa.gov/SearchPhotos/
 
 ## Table of contents
 * [Setup] (#setup)
-* [Setup File Directory] (#setup-file-directories)
+* [Setup File Directory] (#setup-file-directory)
 
 
 
