@@ -1,6 +1,18 @@
 # Feature Identifier 
 
-The purpose of the CLI script is to automate the process of downloading specified images from https://eol.jsc.nasa.gov/SearchPhotos/ 
+The repository holds code for creating a directory structure, running a Convolutional Neural Network, and analzying the output of that CNN. The image dataset comes from: 
+https://eol.jsc.nasa.gov/SearchPhotos/ 
+
+
+## Table of contents
+* [Setup] (#setup)
+* [Setup File Directory] (#setup-file-directories)
+
+
+
+
+
+
 
 
 ## Setup
@@ -25,7 +37,8 @@ This step may take a minute.
 conda install keras matplotlib pillow tensorflow-gpu
 ```
 
-Step 4. Setup File Directory 
+
+## Setup File Directory 
 
 Create a project folder and copy ConvNN_binary.py and mkDirStruct.sh from the repositroy
 
