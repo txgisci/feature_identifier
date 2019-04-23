@@ -1,3 +1,7 @@
+:toc: macro
+:toc-title:
+:toclevels: 99
+
 # Feature Identifier 
 
 The repository holds code for creating a directory structure, running a Convolutional Neural Network, and analzying the output of that CNN. The image dataset comes from: 
