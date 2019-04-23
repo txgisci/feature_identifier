@@ -14,7 +14,7 @@ https://eol.jsc.nasa.gov/SearchPhotos/
 
 
 
-
+<a name="setup"/>
 ## Setup
 Step 1. Setup New Anaconda Environment:
 
@@ -37,7 +37,7 @@ This step may take a minute.
 conda install keras matplotlib pillow tensorflow-gpu
 ```
 
-
+<a name="setup-file-directory"/>
 ## Setup File Directory 
 
 Create a project folder and copy ConvNN_binary.py and mkDirStruct.sh from the repositroy
