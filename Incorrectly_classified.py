@@ -1,15 +1,3 @@
-# Read in a csv of [your/not_your_feature, image_id, confidence]
-# not_your_feature = 0, your_feature = 1
-# find type of confidence level, convert to string if need be
-# place false_predictions.py and Predictions.csv file in the same directory
-# that has your islands_images_336x224
-# script will create the false_positives and false_negatives directories
-# include the confidence level with new image_id name
-# if (not_your_feature && confidence > .5) then cp image_id path into false positive directory
-# if (your_feature && condfidence < .5) then cp image_id path into false negative directory
-# from shutil import copyfile
-# copyfile(src, dst)
-
 from shutil import copyfile
 import csv
 import os
@@ -22,7 +10,6 @@ fieldnames = ['id','confidence_level']
 mode = 0o777
 os.makedirs('incorrect_predictions/false_positives', mode=mode)
 os.makedirs('incorrect_predictions/false_negatives', mode=mode)
-
 
 
 with open(input_file, 'r') as f:
@@ -47,14 +34,3 @@ with open(input_file, 'r') as f:
         src = 'island_images_336x224//test//' + image_id_path
         
         copyfile(src, dest)
-
-
-
-
-
-        # using zip() to write 3 columns to csv
-        # https://stackoverflow.com/questions/17704244/writing-python-lists-to-columns-in-csv
-
-        # with open(r'img_id_list.csv', 'a', newline='') as csvfile:
-        #           writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        #           writer.writerow({'id':new_img_id, 'confidence_level':confidence_val})
